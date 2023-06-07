@@ -1,0 +1,9 @@
+body {
+ background-image: url("p1.png");
+ background-size: cover;
+ background-repeat: no-repeat;
+ background-attachment: fixed;
+ text-align: center;
+ width: 200px;
+ heigh: 100vh;
+}
