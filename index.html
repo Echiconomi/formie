@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="index.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+        import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
+            authDomain: "fir-2aad0.firebaseapp.com",
+            databaseURL: "https://fir-2aad0-default-rtdb.firebaseio.com",
+            projectId: "fir-2aad0",
+            storageBucket: "fir-2aad0.appspot.com",
+            messagingSenderId: "411195442425",
+            appId: "1:411195442425:web:1c4643a7e02c388323ce28",
+            measurementId: "G-P6BL42012B"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Function to handle registration
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const email = document.getElementById('reg-email').value;
+            const discord = document.getElementById('reg-discord').value;
+            const errorMessage = document.getElementById('reg-error-message');
+
+            // Reference to the Firebase database path where users are stored
+            const userRef = ref(database, `users/${username}`);
+
+            try {
+                // Check if the username already exists
+                const userSnapshot = await get(userRef);
+                if (userSnapshot.exists()) {
+                    errorMessage.textContent = 'Username is already taken.';
+                } else {
+                    // Store the new user in the Firebase Realtime Database
+                    await set(userRef, {
+                        email: email,
+                        discord: discord,
+                        password: password
+                    });
+                    errorMessage.textContent = '';
+                    console.log('Registration successful!');
+                    window.location.href = 'login.html';  // Redirect to login page after registration
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = 'An error occurred. Please try again.';
+            }
+        });
+
+        // Handle NUI messages from server
+        window.addEventListener('message', (event) => {
+            if (event.data.action === 'toggleUI') {
+                const registerContainer = document.getElementById('registerContainer');
+                if (!registerContainer) {
+                    console.error('Register container element not found');
+                    return;
+                }
+
+                if (event.data.show) {
+                    registerContainer.style.display = 'block';  // Show the NUI window
+                    SetNuiFocus(true, true);  // Set focus to the NUI window
+                } else {
+                    registerContainer.style.display = 'none';   // Hide the NUI window
+                    SetNuiFocus(false, false);  // Remove focus from the NUI window
+                }
+            }
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #registerContainer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        #registerForm {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        #registerForm input {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #registerForm button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff6600;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #registerForm button:hover {
+            background-color: #e65c00;
+        }
+
+        #reg-error-message {
+            color: #ffcc00;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        #loginRedirectButton {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #e65c00;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #loginRedirectButton:hover {
+            background-color: #e65c00;
+        }
+    </style>
+</head>
+<body>
+    <div id="registerContainer">
+        <form id="registerForm">
+            <input type="text" id="reg-username" placeholder="Username" required>
+            <input type="password" id="reg-password" placeholder="Password (8 characters minimum)" required minlength="8">
+            <input type="email" id="reg-email" placeholder="Email" required>
+            <input type="text" id="reg-discord" placeholder="Discord ID" required>
+            <button type="submit">Register</button>
+            <p id="reg-error-message"></p>
+        </form>
+        <button id="loginRedirectButton" onclick="window.location.href='login.html';">Go to Login Page</button>
+    </div>
+</body>
+</html>
