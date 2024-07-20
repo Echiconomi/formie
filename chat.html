@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="index.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
@@ -33,16 +33,16 @@
             if (messages.length > 0) {
                 messages.forEach(message => {
                     const messageItem = document.createElement('div');
-                    messageItem.textContent = `${message.username}: ${message.message}`;
+                    messageItem.textContent = `${message.username}: ${message.text}`;
                     messageItem.classList.add('message-item');
                     chatContainer.appendChild(messageItem);
                 });
+
+                // Scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             } else {
                 chatContainer.innerHTML = 'No messages.';
             }
-
-            // Scroll to the bottom
-            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         function fetchMessages() {
@@ -65,24 +65,44 @@
             const message = messageInput.value;
 
             if (message.trim() !== '') {
-                const messageData = { username: currentUser, message };
+                const newMessageRef = push(ref(database, `chats/${currentUser}/${friend}`));
+                await set(newMessageRef, {
+                    username: currentUser,
+                    text: message
+                });
 
-                // Save message under both users' chat paths
-                const newMessageRefForSender = push(ref(database, `chats/${currentUser}/${friend}`));
-                const newMessageRefForReceiver = push(ref(database, `chats/${friend}/${currentUser}`));
-
-                await set(newMessageRefForSender, messageData);
-                await set(newMessageRefForReceiver, messageData);
+                // Mark friend as having unread messages
+                const friendRef = ref(database, `users/${friend}/friends/${currentUser}`);
+                await update(friendRef, { hasUnreadMessages: true });
 
                 messageInput.value = '';
-
-                // Scroll to the bottom after sending a message
-                document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
             }
+        }
+
+        function markMessagesAsRead() {
+            const currentUser = localStorage.getItem('username');
+            const chatRef = ref(database, `chats/${currentUser}/${friend}`);
+
+            onValue(chatRef, (snapshot) => {
+                snapshot.forEach(childSnapshot => {
+                    const messageRef = childSnapshot.ref;
+                    const message = childSnapshot.val();
+
+                    // Only mark as read if it's an unread message from the friend
+                    if (message.username === friend) {
+                        update(messageRef, { read: true });
+                    }
+                });
+
+                // Update friend list to clear unread notification
+                const friendRef = ref(database, `users/${currentUser}/friends/${friend}`);
+                update(friendRef, { hasUnreadMessages: false });
+            });
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             fetchMessages();
+            markMessagesAsRead();
 
             const sendButton = document.getElementById('sendButton');
             sendButton.addEventListener('click', sendMessage);
@@ -94,64 +114,56 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background: linear-gradient(to bottom, #ffcc00, #ff6600);
-            color: #ffffff;
+            background: #f0f0f0;
+            color: #333;
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;
             height: 100vh;
             margin: 0;
-            overflow: hidden;
         }
 
         #chatContainer {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            text-align: center;
-            width: 300px;
-            height: 400px;
             display: flex;
             flex-direction: column;
+            flex: 1;
+            overflow: auto;
+            padding: 10px;
+            background: #fff;
         }
 
         #chat {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            background: #000000;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         .message-item {
             padding: 5px;
             margin-bottom: 5px;
-            background: #ffffff;
-            color: #000000;
-            border-radius: 5px;
-            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #inputContainer {
+            display: flex;
+            padding: 10px;
+            background: #fff;
         }
 
         #messageInput {
+            flex: 1;
             padding: 10px;
-            border: none;
+            border: 1px solid #ddd;
             border-radius: 5px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            width: calc(100% - 22px);
         }
 
         #sendButton {
             padding: 10px;
+            margin-left: 10px;
             border: none;
             border-radius: 5px;
             background-color: #4CAF50;
-            color: #ffffff;
-            font-size: 16px;
+            color: #fff;
             cursor: pointer;
-            transition: background-color 0.3s ease;
         }
 
         #sendButton:hover {
@@ -161,13 +173,11 @@
 </head>
 <body>
     <div id="chatContainer">
-        <h1>Chat with <span id="friendName"></span></h1>
         <div id="chat"></div>
-        <input id="messageInput" type="text" placeholder="Type your message...">
-        <button id="sendButton">Send</button>
+        <div id="inputContainer">
+            <input type="text" id="messageInput" placeholder="Type a message...">
+            <button id="sendButton">Send</button>
+        </div>
     </div>
-    <script>
-        document.getElementById('friendName').textContent = new URLSearchParams(window.location.search).get('friend');
-    </script>
 </body>
 </html>
