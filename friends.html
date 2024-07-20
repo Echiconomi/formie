@@ -65,9 +65,10 @@
                 snapshot.forEach(childSnapshot => {
                     const friendName = childSnapshot.key;
                     const friendData = childSnapshot.val();
-                    const hasUnreadMessages = friendData.hasUnreadMessages || false;
-                    
-                    friends.push({ name: friendName, hasUnreadMessages });
+                    if (friendData) {
+                        const hasUnreadMessages = friendData.hasUnreadMessages || false;
+                        friends.push({ name: friendName, hasUnreadMessages });
+                    }
                 });
 
                 displayFriends(friends);
