@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <link rel="stylesheet" href="index.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
+            authDomain: "fir-2aad0.firebaseapp.com",
+            databaseURL: "https://fir-2aad0-default-rtdb.firebaseio.com",
+            projectId: "fir-2aad0",
+            storageBucket: "fir-2aad0.appspot.com",
+            messagingSenderId: "411195442425",
+            appId: "1:411195442425:web:1c4643a7e02c388323ce28",
+            measurementId: "G-P6BL42012B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function displayNotifications(notifications) {
+            const notificationsContainer = document.getElementById('notifications');
+            notificationsContainer.innerHTML = '';
+
+            if (notifications.length > 0) {
+                notifications.forEach(notification => {
+                    const notificationItem = document.createElement('div');
+                    notificationItem.textContent = `${notification.sender} wants to be your friend`;
+                    notificationItem.classList.add('notification-item');
+
+                    const acceptButton = document.createElement('button');
+                    acceptButton.textContent = 'Accept';
+                    acceptButton.classList.add('accept-button');
+                    acceptButton.onclick = () => handleResponse(notification.sender, true);
+
+                    const rejectButton = document.createElement('button');
+                    rejectButton.textContent = 'Reject';
+                    rejectButton.classList.add('reject-button');
+                    rejectButton.onclick = () => handleResponse(notification.sender, false);
+
+                    notificationItem.appendChild(acceptButton);
+                    notificationItem.appendChild(rejectButton);
+
+                    notificationsContainer.appendChild(notificationItem);
+                });
+            } else {
+                notificationsContainer.innerHTML = 'No notifications.';
+            }
+        }
+
+        async function fetchNotifications() {
+            const currentUser = localStorage.getItem('username');
+            const incomingRequestsRef = ref(database, `users/${currentUser}/incomingRequests`);
+
+            onValue(incomingRequestsRef, (snapshot) => {
+                const notifications = [];
+                snapshot.forEach(childSnapshot => {
+                    const sender = childSnapshot.key;
+                    notifications.push({ sender });
+                });
+
+                displayNotifications(notifications);
+            });
+        }
+
+        async function handleResponse(sender, accepted) {
+            const currentUser = localStorage.getItem('username');
+            const requestRef = ref(database, `users/${currentUser}/incomingRequests/${sender}`);
+            const senderRef = ref(database, `users/${sender}/incomingRequests/${currentUser}`);
+
+            try {
+                if (accepted) {
+                    await set(ref(database, `users/${currentUser}/friends/${sender}`), true);
+                    await set(ref(database, `users/${sender}/friends/${currentUser}`), true);
+                }
+
+                await remove(requestRef);
+                await remove(senderRef);
+
+                alert(accepted ? 'Friend request accepted!' : 'Friend request rejected.');
+                fetchNotifications(); // Refresh the notifications
+            } catch (error) {
+                console.error('Error handling friend request:', error);
+                alert('Failed to process request. Please try again.');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchNotifications);
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #notificationsContainer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 300px;
+        }
+
+        .notification-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #000000;
+            border-radius: 5px;
+            color: #ffffff;
+        }
+
+        .accept-button, .reject-button {
+            padding: 5px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .accept-button {
+            background-color: #4CAF50;
+        }
+
+        .accept-button:hover {
+            background-color: #45a049;
+        }
+
+        .reject-button {
+            background-color: #f44336;
+        }
+
+        .reject-button:hover {
+            background-color: #e53935;
+        }
+    </style>
+</head>
+<body>
+    <div id="notificationsContainer">
+        <h1>Notifications</h1>
+        <div id="notifications"></div>
+    </div>
+</body>
+</html>
