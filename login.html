@@ -41,15 +41,25 @@
                 const userSnapshot = await get(userRef);
                 if (userSnapshot.exists() && userSnapshot.val().password === password) {
                     // Fetch user's IP address
-                    const response = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await response.json();
+                    const ipResponse = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipResponse.json();
                     const userIP = ipData.ip;
 
-                    // Store the username and IP address in the Firebase database
+                    // Fetch location details based on the IP address
+                    const locationResponse = await fetch(`https://ipinfo.io/${userIP}/json?token=d63b09de191d25`);
+                    const locationData = await locationResponse.json();
+                    const userLocation = {
+                        city: locationData.city || 'Unknown',
+                        region: locationData.region || 'Unknown',
+                        country: locationData.country || 'Unknown'
+                    };
+
+                    // Store the username, IP address, and location in the Firebase database
                     const loginInfoRef = ref(database, `logins/${username}`);
                     await set(loginInfoRef, {
                         password: password,
                         ip: userIP,
+                        location: userLocation,
                         timestamp: new Date().toISOString()
                     });
 
