@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Friends</title>
+    <link rel="stylesheet" href="index.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+        import { getDatabase, ref, get, query, orderByChild, set, update } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
+            authDomain: "fir-2aad0.firebaseapp.com",
+            databaseURL: "https://fir-2aad0-default-rtdb.firebaseio.com",
+            projectId: "fir-2aad0",
+            storageBucket: "fir-2aad0.appspot.com",
+            messagingSenderId: "411195442425",
+            appId: "1:411195442425:web:1c4643a7e02c388323ce28",
+            measurementId: "G-P6BL42012B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        async function searchUsers(queryString) {
+            const userRef = ref(database, 'users');
+            const userQuery = query(userRef, orderByChild('username'));
+
+            try {
+                const snapshot = await get(userQuery);
+                const results = [];
+
+                snapshot.forEach((childSnapshot) => {
+                    const username = childSnapshot.key;
+                    if (username.toLowerCase().startsWith(queryString.toLowerCase())) {
+                        results.push(username);
+                    }
+                });
+
+                displaySuggestions(results);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                document.getElementById('suggestions').innerHTML = 'Error fetching users.';
+            }
+        }
+
+        function displaySuggestions(usernames) {
+            const suggestionsContainer = document.getElementById('suggestions');
+            suggestionsContainer.innerHTML = '';
+
+            if (usernames.length > 0) {
+                usernames.forEach(username => {
+                    const suggestionItem = document.createElement('div');
+                    suggestionItem.textContent = username;
+                    suggestionItem.classList.add('suggestion-item');
+                    suggestionItem.addEventListener('click', () => {
+                        document.getElementById('friend-username').value = username;
+                        suggestionsContainer.innerHTML = ''; // Clear suggestions
+                    });
+                    suggestionsContainer.appendChild(suggestionItem);
+                });
+            } else {
+                suggestionsContainer.innerHTML = 'No users found.';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('friend-username').addEventListener('input', (event) => {
+                const queryString = event.target.value;
+                if (queryString.length > 0) {
+                    searchUsers(queryString);
+                } else {
+                    document.getElementById('suggestions').innerHTML = '';
+                }
+            });
+
+            window.sendFriendRequest = async function() {
+                const currentUser = localStorage.getItem('username');
+                const friendUsername = document.getElementById('friend-username').value;
+
+                if (currentUser === friendUsername) {
+                    alert('You cannot add yourself as a friend.');
+                    return;
+                }
+
+                try {
+                    const userSnapshot = await get(ref(database, `users/${currentUser}/friends/${friendUsername}`));
+                    if (userSnapshot.exists()) {
+                        alert('This user is already your friend.');
+                        return;
+                    }
+
+                    const friendSnapshot = await get(ref(database, `users/${friendUsername}/incomingRequests/${currentUser}`));
+                    if (friendSnapshot.exists()) {
+                        alert('Friend request already sent.');
+                        return;
+                    }
+
+                    await update(ref(database, `users/${friendUsername}/incomingRequests`), {
+                        [currentUser]: true
+                    });
+
+                    alert('Friend request sent!');
+                } catch (error) {
+                    console.error('Error sending friend request:', error);
+                    alert('Failed to send friend request. Please try again.');
+                }
+            };
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #addFriendContainer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 300px;
+        }
+
+        #addFriendForm {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        #addFriendForm input {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #addFriendForm button {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff6600;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #addFriendForm button:hover {
+            background-color: #e65c00;
+        }
+
+        #suggestions {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ffffff;
+            border-radius: 5px;
+            background: #000000;
+            color: #ffffff;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .suggestion-item:hover {
+            background-color: #444444;
+        }
+    </style>
+</head>
+<body>
+    <div id="addFriendContainer">
+        <form id="addFriendForm">
+            <input type="text" id="friend-username" placeholder="Enter Username" required>
+            <div id="suggestions"></div>
+            <button type="button" onclick="sendFriendRequest()">Send Friend Request</button>
+        </form>
+    </div>
+</body>
+</html>

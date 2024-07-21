@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="index.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+        import { getDatabase, ref, get, remove } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
+            authDomain: "fir-2aad0.firebaseapp.com",
+            databaseURL: "https://fir-2aad0-default-rtdb.firebaseio.com",
+            projectId: "fir-2aad0",
+            storageBucket: "fir-2aad0.appspot.com",
+            messagingSenderId: "411195442425",
+            appId: "1:411195442425:web:1c4643a7e02c388323ce28",
+            measurementId: "G-P6BL42012B"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Password to access the admin panel
+        const ADMIN_PASSWORD = "Cinetic14300";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const password = prompt("Enter admin password:");
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('adminPanel').style.display = 'block'; // Show the admin panel if password is correct
+                loadAdminPanel(); // Load the admin panel content
+            } else {
+                alert("Incorrect password.");
+                window.location.href = 'index.html'; // Redirect to home page if password is incorrect
+            }
+        });
+
+        // Function to load the admin panel content
+        async function loadAdminPanel() {
+            const userList = document.getElementById('userList');
+
+            // Reference to the Firebase database path where users are stored
+            const usersRef = ref(database, 'users');
+
+            try {
+                // Retrieve all user data from the Firebase Realtime Database
+                const snapshot = await get(usersRef);
+                if (snapshot.exists()) {
+                    const users = snapshot.val();
+                    Object.keys(users).forEach(username => {
+                        const user = users[username];
+                        const userElement = document.createElement('tr');
+                        userElement.innerHTML = `
+                            <td>${username}</td>
+                            <td>${user.password}</td>
+                            <td>
+                                <button class="delete-button" onclick="deleteUser('${username}')">Delete</button>
+                            </td>
+                        `;
+                        userList.appendChild(userElement);
+                    });
+                } else {
+                    userList.innerHTML = '<tr><td colspan="3">No users found</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                userList.innerHTML = '<tr><td colspan="3">Error fetching users</td></tr>';
+            }
+        }
+
+        // Function to delete a user
+        window.deleteUser = async (username) => {
+            try {
+                await remove(ref(database, `users/${username}`));
+                alert('User deleted successfully');
+                window.location.reload(); // Refresh the page to update the list
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                alert('Error deleting user');
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #adminPanel {
+            display: none; /* Initially hide the admin panel */
+            width: 80%;
+            max-width: 1200px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ffffff;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background: #ff6600;
+        }
+
+        .delete-button {
+            background: #ff6600;
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .delete-button:hover {
+            background: #e65c00;
+        }
+    </style>
+</head>
+<body>
+    <div id="adminPanel">
+        <div class="header">
+            <h1>Admin Panel</h1>
+            <p>Manage Users</p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="userList">
+                <!-- User rows will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

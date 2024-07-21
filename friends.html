@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends List</title>
+    <link rel="stylesheet" href="index.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
+            authDomain: "fir-2aad0.firebaseapp.com",
+            databaseURL: "https://fir-2aad0-default-rtdb.firebaseio.com",
+            projectId: "fir-2aad0",
+            storageBucket: "fir-2aad0.appspot.com",
+            messagingSenderId: "411195442425",
+            appId: "1:411195442425:web:1c4643a7e02c388323ce28",
+            measurementId: "G-P6BL42012B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function displayFriends(friends) {
+            const friendsContainer = document.getElementById('friends');
+            friendsContainer.innerHTML = '';
+
+            if (friends.length > 0) {
+                friends.forEach(friend => {
+                    const friendItem = document.createElement('div');
+                    friendItem.textContent = friend;
+                    friendItem.classList.add('friend-item');
+
+                    const chatButton = document.createElement('button');
+                    chatButton.textContent = 'Chat';
+                    chatButton.classList.add('chat-button');
+                    chatButton.onclick = () => window.location.href = `chat.html?friend=${friend}`;
+
+                    friendItem.appendChild(chatButton);
+                    friendsContainer.appendChild(friendItem);
+                });
+            } else {
+                friendsContainer.innerHTML = 'You have no friends.';
+            }
+        }
+
+        function fetchFriends() {
+            const currentUser = localStorage.getItem('username');
+            const friendsRef = ref(database, `users/${currentUser}/friends`);
+
+            onValue(friendsRef, (snapshot) => {
+                const friends = [];
+                snapshot.forEach(childSnapshot => {
+                    friends.push(childSnapshot.key);
+                });
+
+                displayFriends(friends);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchFriends);
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #friendsContainer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 300px;
+        }
+
+        .friend-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #000000;
+            border-radius: 5px;
+            color: #ffffff;
+        }
+
+        .chat-button {
+            padding: 5px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            cursor: pointer;
+            background-color: #4CAF50;
+            transition: background-color 0.3s ease;
+        }
+
+        .chat-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="friendsContainer">
+        <h1>Your Friends</h1>
+        <div id="friends"></div>
+    </div>
+</body>
+</html>

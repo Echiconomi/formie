@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="index.css">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/9.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCCAwpJiWVd18-5cP61Xo3tziXWCwtDipE",
+            authDomain: "fir-2aad0.firebaseapp.com",
+            databaseURL: "https://fir-2aad0-default-rtdb.firebaseio.com",
+            projectId: "fir-2aad0",
+            storageBucket: "fir-2aad0.appspot.com",
+            messagingSenderId: "411195442425",
+            appId: "1:411195442425:web:1c4643a7e02c388323ce28",
+            measurementId: "G-P6BL42012B"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        const params = new URLSearchParams(window.location.search);
+        const friend = params.get('friend');
+
+        function displayMessages(messages) {
+            const chatContainer = document.getElementById('chat');
+            chatContainer.innerHTML = '';
+
+            if (messages.length > 0) {
+                messages.forEach(message => {
+                    const messageItem = document.createElement('div');
+                    messageItem.textContent = `${message.username}: ${message.message}`;
+                    messageItem.classList.add('message-item');
+                    chatContainer.appendChild(messageItem);
+                });
+            } else {
+                chatContainer.innerHTML = 'No messages.';
+            }
+
+            // Scroll to the bottom of the chat container
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function fetchMessages() {
+            const currentUser = localStorage.getItem('username');
+            const chatRef = ref(database, `chats/${currentUser}/${friend}`);
+
+            onValue(chatRef, (snapshot) => {
+                const messages = [];
+                snapshot.forEach(childSnapshot => {
+                    messages.push(childSnapshot.val());
+                });
+
+                displayMessages(messages);
+            });
+        }
+
+        async function sendMessage() {
+            const currentUser = localStorage.getItem('username');
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value;
+
+            if (message.trim() !== '') {
+                const messageData = { username: currentUser, message };
+
+                // Save message under both users' chat paths
+                const newMessageRefForSender = push(ref(database, `chats/${currentUser}/${friend}`));
+                const newMessageRefForReceiver = push(ref(database, `chats/${friend}/${currentUser}`));
+
+                await set(newMessageRefForSender, messageData);
+                await set(newMessageRefForReceiver, messageData);
+
+                messageInput.value = '';
+                // Scroll to the bottom after sending a message
+                document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Update the header with the friend's username
+            const friendNameElement = document.getElementById('friendName');
+            if (friendNameElement) {
+                friendNameElement.textContent = friend;
+            }
+
+            fetchMessages();
+
+            const sendButton = document.getElementById('sendButton');
+            sendButton.addEventListener('click', sendMessage);
+
+            // Optional: Update chat every few seconds
+            setInterval(fetchMessages, 5000);
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #chatContainer {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            width: 300px;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            background: #000000;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .message-item {
+            padding: 5px;
+            margin-bottom: 5px;
+            background: #ffffff;
+            color: #000000;
+            border-radius: 5px;
+            text-align: left;
+        }
+
+        #messageInput {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            width: calc(100% - 22px);
+        }
+
+        #sendButton {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #4CAF50;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #sendButton:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="chatContainer">
+        <h1>Chat with <span id="friendName"></span></h1>
+        <div id="chat"></div>
+        <input id="messageInput" type="text" placeholder="Type your message...">
+        <button id="sendButton">Send</button>
+    </div>
+</body>
+</html>

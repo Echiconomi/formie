@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="index.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #ffcc00, #ff6600);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .dashboard-container {
+            width: 80%;
+            max-width: 1200px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        .header, .footer {
+            grid-column: span 3;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+        }
+
+        .notification-button, .add-friend-button {
+            position: absolute;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            padding: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .notification-button {
+            right: 100px;
+        }
+
+        .add-friend-button {
+            right: 10px;
+        }
+
+        .notification-button:hover, .add-friend-button:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .news-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .news-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .news-item h2 {
+            margin: 0 0 10px 0;
+        }
+
+        .news-item p {
+            margin: 0;
+        }
+
+        .main-content {
+            grid-column: span 2;
+        }
+
+        .sidebar {
+            grid-column: span 1;
+        }
+
+        .logout-button {
+            background: #ff6600; /* Orange color */
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            padding: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            float: right;
+            margin-top: -50px;
+        }
+
+        .logout-button:hover {
+            background: #e65c00; /* Darker orange on hover */
+        }
+
+        .admin-panel {
+            background: #ff6600; /* Orange color */
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            padding: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            position: absolute;
+            top: 680px; /* Adjust this value to move the button up or down */
+            right: 460px; /* Adjust this value to move the button left or right */
+        }
+        .ladmin-panel {
+            background: #e65c00; /* Darker orange on hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Cinetic Dashboard</h1>
+            <button class="notification-button" onclick="navigateTo('notifications.html')">Notifications</button>
+            <button class="add-friend-button" onclick="navigateTo('add-friends.html')">Add Friend</button>
+            <p id="welcomeMessage">Welcome to the Dashboard</p>
+        </div>
+        <div class="main-content">
+            <div class="news-item" onclick="navigateTo('vip-pass.html')">
+                <h2>VIP Pass</h2>
+                <p>Exclusive access and benefits.</p>
+            </div>
+            <div class="news-item" onclick="navigateTo('premium-cars.html')">
+                <h2>Premium Cars</h2>
+                <p>Browse and select premium vehicles.</p>
+            </div>
+            <div class="news-item" onclick="navigateTo('mini-game.html')">
+                <h2>Mini Game</h2>
+                <p>Play exciting mini-games.</p>
+            </div>
+            <div class="news-item" onclick="navigateTo('lucky-draw.html')">
+                <h2>Lucky Draw</h2>
+                <p>Try your luck and win prizes!</p>
+            </div>
+            <div class="news-item" onclick="navigateTo('news-updates.html')">
+                <h2>News and Updates</h2>
+                <p>Stay updated with the latest news.</p>
+            </div>
+        </div>
+        <div class="sidebar">
+            <div class="news-item" onclick="navigateTo('friends.html')">
+                <h2>Friends</h2>
+                <p>Manage your friends and connections.</p>
+            </div>
+            <div class="news-item">
+                <h2>Game Stats</h2>
+                <p>View your gaming statistics and achievements.</p>
+            </div>
+            <div class="news-item">
+                <h2>Events</h2>
+                <p>Participate in upcoming events and challenges.</p>
+            </div>
+        </div>
+        <div class="footer">
+            <button class="logout-button" onclick="logout()">Logout</button>
+            <p>Made By Nomi</p>
+        </div>
+        <div class="admin">
+            <button class="admin-panel" onclick="admin()">admin</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Retrieve the username from localStorage
+            const username = localStorage.getItem('username');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+
+            if (username) {
+                welcomeMessage.textContent = `Welcome, ${username}!`;
+            } else {
+                // Redirect to login if no username is found in localStorage
+                window.location.href = 'login.html';
+            }
+        });
+
+        function navigateTo(page) {
+            window.location.href = page;
+        }
+
+        function logout() {
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+
+        function admin() {
+            window.location.href = 'admin.html';
+        }
+    </script>
+</body>
+</html>
